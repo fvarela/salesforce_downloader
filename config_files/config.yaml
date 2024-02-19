@@ -1,0 +1,20 @@
+sf:
+  user: "your_salesforce_username@your_domain.com"
+  token: "your_salesforce_token"
+
+salesforce_jobs:
+  your_first_job:
+    query: |
+      SELECT 
+        Id,
+        {incremental_field_name}
+      FROM SomeObject
+      WHERE SomeField = 'SomeValue'
+      AND {incremental_field_name} >= {incremental_field_value}
+      ORDER BY {incremental_field_name} ASC
+    incremental_field:
+      field_name: "LastModifiedDate"
+      default_value: "2019-01-01T00:00:00.000+0000"
+    target_json:
+      folder: "salesforce_data/"
+      file: "proton_accounts.json"

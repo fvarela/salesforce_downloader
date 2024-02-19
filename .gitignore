@@ -1,0 +1,9 @@
+.venv
+build
+dist
+salesforce_data
+my_notes.txt
+*.spec
+config_files/*_dev.yaml
+*.pyc
+*.db

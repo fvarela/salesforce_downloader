@@ -1,0 +1,5 @@
+questionary
+colorama
+simple_salesforce
+PyYAML
+tinydb
