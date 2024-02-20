@@ -7,3 +7,4 @@ my_notes.txt
 config_files/*_dev.yaml
 *.pyc
 *.db
+launch.json

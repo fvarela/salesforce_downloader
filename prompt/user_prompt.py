@@ -10,9 +10,10 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 import time
+import sys
 class UserPrompt():
     def __init__(self):
-        print(f"{mystyle.bright}Welcome to the Salesforce CLI.{mystyle.done}")
+        print(f"{mystyle.bright}Welcome to the Salesforce Data Exporter CLI Tool.{mystyle.done}")
         self.config = Config()
         self.config.initialize()
         self.salesforce_jobs = self.config.data.get('salesforce_jobs', [])
@@ -28,9 +29,10 @@ class UserPrompt():
         try:
             sf_login(self.username, password, self.security_token)
         except Exception as e:
+            print(f"{mystyle.bad}Error logging into Salesforce.{mystyle.done}: {e}")
             print("Press any key to exit.")
             input()
-            exit(1)
+            sys.exit(1)
         print(f"Successfully tested Salesforce logging credentials for {mystyle.bright}{self.username}{mystyle.done}.")
         time.sleep(1)
         return password
@@ -79,7 +81,7 @@ class UserPrompt():
 
             elif choice == "Exit":
                 questionary.print("Exiting.")
-                exit(0)
+                sys.exit(0)
 
     def run_job(self, job_name):
         job_params = self.salesforce_jobs.get(job_name)

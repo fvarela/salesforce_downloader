@@ -3,3 +3,4 @@ colorama
 simple_salesforce
 PyYAML
 tinydb
+pyinstaller
