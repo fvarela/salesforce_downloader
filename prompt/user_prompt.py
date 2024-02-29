@@ -69,12 +69,15 @@ class UserPrompt():
                 with SQLiteDBHandler() as db_handler:
                     available_tables = db_handler.get_available_tables()
                 available_tables.append("All tables")
+                available_tables.append("Cancel and return to main menu")
                 selected_table = questionary.select("Table", choices=available_tables).ask()
                 if selected_table == "All tables":
                     with SQLiteDBHandler() as db_handler:
                         for table in available_tables:
-                            if table != "All tables":
+                            if table not in ["All tables", "Cancel and return to main menu"]:
                                 db_handler.delete_table(table)
+                elif selected_table == "Cancel and return to main menu":
+                    continue
                 else:
                     with SQLiteDBHandler() as db_handler:
                         db_handler.delete_table(selected_table)
@@ -99,14 +102,7 @@ class UserPrompt():
             incremental_field_name=incremental_field_name,
             incremental_field_default_value=incremental_field_default_value)
         print(f"Starting job {mystyle.bright}{job_name}{mystyle.done} at {time.strftime('%Y-%m-%d %H:%M:%S')}.")
-        job_timer = time.time()
-        while True:
-            loop_timer = time.time()
-            entries_parsed = sf_job.execute()
-            print(f"Job {mystyle.bright}{job_name}{mystyle.done} parsed {mystyle.good}{entries_parsed}{mystyle.done} records in the last loop. Elapsed time: {mystyle.good}{round(time.time() - loop_timer, 2)}{mystyle.done} seconds. Latests {mystyle.bright}{incremental_field_name}{mystyle.done}:{mystyle.good}{sf_job.get_last_incremental_field_value()}{mystyle.done}")
-            # print(f"\tLatests {mystyle.bright}{incremental_field_name}{mystyle.done}:{mystyle.good}{sf_job.get_last_incremental_field_value()}{mystyle.done}")
-            if entries_parsed < 10:
-                print(f"Job {mystyle.bright}{job_name}{mystyle.done}. Less than {mystyle.good}10{mystyle.done} records were parsed in the last loop. Exiting job.")
-                break
-        print(f"Job {mystyle.bright}{job_name}{mystyle.done} took {mystyle.good}{round(time.time() - job_timer, 2)}{mystyle.done} seconds to complete.")
+        sf_job.execute()
+        # print(f"\tLatests {mystyle.bright}{incremental_field_name}{mystyle.done}:{mystyle.good}{sf_job.get_last_incremental_field_value()}{mystyle.done}")
+
 

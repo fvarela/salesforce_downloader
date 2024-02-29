@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger('main')
 import time
 from db_handler.db_handler import SQLiteDBHandler
+from aux_tools.my_style import mystyle
 
 
 def sf_login(user, password, security_token):
@@ -26,7 +27,7 @@ class SalesforceJob:
         with SQLiteDBHandler() as db_handler:
             incremental_field_value = db_handler.get_latest_incremental_value(self.name)
             if incremental_field_value is None:
-                logger.info(f"Job: {self.name}. No previous incremental value found. Using default value: {self.incremental_field_default_value}")
+                logger.info(f"Job: {mystyle.bright}{self.name}{mystyle.done}. No previous incremental value found. Using default value: {mystyle.bright}{self.incremental_field_default_value}{mystyle.done}")
                 incremental_field_value = self.incremental_field_default_value
         return incremental_field_value 
     def _format_query(self):
@@ -55,18 +56,37 @@ class SalesforceJob:
             return {}
 
     def execute(self):
+        records_parsed = 0
         self.query = self._format_query()
-        records = self.sf.query(self.query)
-        with SQLiteDBHandler() as db_handler:
-            for record in records['records']:
-                record = self._parse_record(record)
-                db_handler.upsert_entry(table_name=self.name, record=record)
-        self.export_to_json(name=self.name, target_json_path=self.target_json_path)
-        if len(records['records']) > 0:
-            last_incremental_value = records.get('records')[-1][self.incremental_field_name]
+        response = self.sf.query(self.query)
+        total_start_time = time.time()
+
+        while True:
+            start_time = time.time()
             with SQLiteDBHandler() as db_handler:
-                db_handler.upsert_entry(self.name, {'Id': 'incremental_field_value', 'incremental_value': last_incremental_value})
-        return len(records['records'])
+                for record in response['records']:
+                    record = self._parse_record(record)
+                    db_handler.upsert_entry(table_name=self.name, record=record)
+                    if 'LastModifiedDate' in record:
+                        latest_last_modified_date = record['LastModifiedDate']
+
+            records_parsed += len(response['records'])
+            elapsed_time = time.time() - start_time
+            print(f"Job {mystyle.bright}{self.name}{mystyle.done} parsed  {mystyle.good}{len(response['records'])}{mystyle.done} records in the last loop. Elapsed time: {mystyle.good}{elapsed_time:.2f}{mystyle.done} seconds. Latest {mystyle.bright}{self.incremental_field_name}{mystyle.done}:{mystyle.good}{latest_last_modified_date}{mystyle.done}")
+            if not response['done']:
+                response = self.sf.query_more(response['nextRecordsUrl'], True)
+            else:
+                break
+
+        self.export_to_json(name=self.name, target_json_path=self.target_json_path)
+
+        if records_parsed > 0:
+            with SQLiteDBHandler() as db_handler:
+                db_handler.upsert_entry(self.name, {'Id': 'incremental_field_value', 
+                                                    'incremental_value': latest_last_modified_date})
+        
+        print(f"Job {mystyle.bright}{self.name}{mystyle.done} {mystyle.good}DONE!{mystyle.done}. It parsed a total of {mystyle.good}{records_parsed}{mystyle.done} records in {mystyle.good}{round(time.time() - total_start_time, 2)}{mystyle.done} seconds.")
+
     
     def export_to_json(self, name, target_json_path):
         with SQLiteDBHandler() as db_handler:
