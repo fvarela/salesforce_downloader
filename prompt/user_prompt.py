@@ -6,9 +6,19 @@ import os
 import logging
 from db_handler.db_handler import SQLiteDBHandler
 logger = logging.getLogger('main')
-logger.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-logger.addHandler(ch)
+logger.setLevel(logging.DEBUG)
+# ch = logging.StreamHandler()
+# logger.addHandler(ch)
+
+#Add a file handler
+#Remove the file execution.log if it exists
+try:
+    os.remove('execution.log')
+except FileNotFoundError:
+    pass
+fh = logging.FileHandler('execution.log')
+logger.addHandler(fh)
+
 import time
 import sys
 class UserPrompt():

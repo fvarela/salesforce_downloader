@@ -30,10 +30,10 @@ class SQLiteDBHandler:
         cursor.execute(create_table_sql)
         self.conn.commit()
 
-    def upsert_entry(self, table_name, record):
+    def upsert_entry(self, table_name, record, incremental_field_name):
         self.create_table(table_name)  # Ensure table exists
         # Extract incremental_value from the record's JSON data
-        incremental_value = record.get('incremental_value', '')
+        incremental_value = record.get(incremental_field_name, '')
         upsert_sql = f'''INSERT INTO {table_name} (key, value, incremental_value)
                          VALUES (?, ?, ?)
                          ON CONFLICT(key) DO UPDATE SET
@@ -41,6 +41,8 @@ class SQLiteDBHandler:
                          incremental_value = excluded.incremental_value;'''
         cursor = self.conn.cursor()
         cursor.execute(upsert_sql, (record['Id'], json.dumps(record), incremental_value))
+
+        logger.debug(f"Table: {table_name}. Upserted record with key: {record.get('Id')}, Work Order Number: {record.get('WorkOrderNumber')} incremental_value: {incremental_value}.")
         self.conn.commit()
 
     def get_latest_incremental_value(self, table_name):
